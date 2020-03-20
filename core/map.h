@@ -680,6 +680,81 @@ public:
 
 		clear();
 	}
+
+
+
+	//AleMax: SELF IMPLEMENTED FUNCTION
+	void from_island(K* pos_keys, V* cells, uint64_t quadratic_size) {
+
+        Element** nodes = new Element*[quadratic_size];
+		for(uint64_t i = 0; i < quadratic_size; i++) {
+			nodes[i] = memnew_allocator(Element, A);
+			
+			//printf("Ref: %p\n", &pos_keys[i]);
+			nodes[i]->_key = pos_keys[i];
+			//printf("_key: %p\n", &(nodes[i]->_key));
+			nodes[i]->_value = cells[i];
+		}
+		for(uint64_t i = 0; i < quadratic_size; i++) {
+			if(i > 0)
+				nodes[i]->_prev = nodes[i - 1];
+			if(i < quadratic_size - 1)
+				nodes[i]->_next = nodes[i + 1];
+		}
+		nodes[0]->_prev = NULL;
+		nodes[quadratic_size - 1]->_next = NULL;
+		
+		int current_color = BLACK; //Color which the lowest row ***should*** have in an alternating state (in reality its always black)
+		//if(!(get_shift_from_power_of_2(quadratic_size) % 2)) { //useless actually? cuz we square the size anyways
+			//current_color = RED;
+		//}
+
+		//Connect 0 to 1:
+		nodes[0]->color = other_color(current_color); //Color
+		nodes[0]->parent = nodes[1];
+		nodes[0]->right = _data._nil;
+		nodes[0]->left = _data._nil;
+		
+		nodes[1]->color = current_color;
+		nodes[1]->left = nodes[0];
+		nodes[1]->right = _data._nil;
+
+		//First row (excluding one)
+		for(uint64_t i = 3; i < quadratic_size; i += 2) {
+			nodes[i]->color = BLACK;
+			nodes[i]->left = _data._nil;
+			nodes[i]->right = _data._nil;
+		}
+		
+		
+		for(uint64_t current_step = 1; current_step * 2 < quadratic_size; current_step *= 2) {
+			current_color = other_color(current_color);
+
+			for(uint64_t i = 2 * current_step; i < quadratic_size; i += 4 * current_step) {
+				nodes[i]->color = current_color;
+				nodes[i]->left = nodes[i - current_step];
+				nodes[i]->right = nodes[i + current_step];
+				nodes[i - current_step]->parent = nodes[i];
+				nodes[i + current_step]->parent = nodes[i];
+			}
+
+		}
+		_data._create_root();
+		_data._root->left = nodes[quadratic_size / 2];
+		nodes[quadratic_size / 2]->parent = _data._root;
+		_data.size_cache = quadratic_size;
+		
+		delete[] nodes;
+
+    }
+
+	//AleMax: SELF IMPLEMENTED FUNCTION
+	int inline other_color(int color) {
+		return (color == RED) ? BLACK : RED;
+	}
+
+
+
 };
 
 #endif

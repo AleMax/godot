@@ -1794,6 +1794,54 @@ String TileMap::get_configuration_warning() const {
 	return warning;
 }
 
+
+//AleMax: SELF IMPLEMENTED FUNCTION
+void TileMap::ground_island_from_heightmap(uint16_t** tile_ids, uint32_t size) {
+	if(size > 3) {
+		uint64_t quadratic_size = size * size;
+		PosKey* pos_keys = new PosKey[quadratic_size];
+		Cell* cells = new Cell[quadratic_size];
+		for(uint32_t y = 0; y < size; y++) {
+			for(uint32_t x = 0; x < size; x++) {		
+				pos_keys[y * size + x].x = x;
+				pos_keys[y * size + x].y = y;
+				cells[y * size + x].id = tile_ids[x][y];
+				cells[y * size + x].flip_h = false;
+				cells[y * size + x].flip_v = false;
+				cells[y * size + x].transpose = false;
+				cells[y * size + x].autotile_coord_x = 0;
+				cells[y * size + x].autotile_coord_y = 0;
+			}
+		}
+        tile_map.from_island(pos_keys, cells, quadratic_size);
+		
+		uint32_t q_size = int(ceil(size / _get_quadrant_size()));
+
+		for(uint32_t y = 0; y < q_size; y++) {
+			for(uint32_t x = 0; x < q_size; x++) {
+				PosKey qk(x, y);
+				Map<PosKey, Quadrant>::Element *Q =_create_quadrant(qk);
+				Quadrant &q = Q->get();
+				for(int qx = 0; qx < _get_quadrant_size(); qx++) {
+					for(int qy = 0; qy < _get_quadrant_size(); qy++) {
+						PosKey pos(qx + _get_quadrant_size() * x, qy + _get_quadrant_size() * y);
+						q.cells.insert(pos);
+					}
+				}
+				_make_quadrant_dirty(Q);
+			}
+		}
+		used_size_cache_dirty = true;
+
+    	delete[] pos_keys;
+		delete[] cells;
+
+	}
+
+}
+
+
+
 void TileMap::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_tileset", "tileset"), &TileMap::set_tileset);
@@ -1889,6 +1937,9 @@ void TileMap::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_set_tile_data"), &TileMap::_set_tile_data);
 	ClassDB::bind_method(D_METHOD("_get_tile_data"), &TileMap::_get_tile_data);
+
+	//ALEMAX MADE:
+	//ClassDB::bind_method(D_METHOD("ground_island_from_heightmap", "tile_ids", "size"), &TileMap::ground_island_from_heightmap);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode", PROPERTY_HINT_ENUM, "Square,Isometric,Custom"), "set_mode", "get_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "tile_set", PROPERTY_HINT_RESOURCE_TYPE, "TileSet"), "set_tileset", "get_tileset");

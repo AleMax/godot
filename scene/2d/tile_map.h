@@ -349,6 +349,9 @@ public:
 	void fix_invalid_tiles();
 	void clear();
 
+	//AleMax: SELF IMPLEMENTED FUNCTION
+	void ground_island_from_heightmap(uint16_t** tile_ids, uint32_t size);
+
 	TileMap();
 	~TileMap();
 };
